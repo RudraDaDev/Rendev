@@ -321,3 +321,54 @@ export function segmented(parent, { total = 28, filled = 0, height = 8, props = 
   }
   return strip
 }
+
+// ── data helpers (portfolio) ─────────────────────────────────
+// small outlined chip — used for stacks, tags, link affordances
+export function chip(parent, text, {
+  c = C.dim, border = C.line, bg = 'transparent',
+  hover = true,
+} = {}) {
+  const el = new Text(parent, {
+    text,
+    fs: 9, ff: MONO,
+    c, bg, border: `1px solid ${border}`,
+    p: '2px 6px',
+    letterSpacing: '0.07em', textTransform: 'uppercase',
+    userSelect: 'none',
+    transition: 'color 120ms, border-color 120ms, background 120ms',
+  })
+
+  if (hover) {
+    el.on('mouseenter', () => {
+      el.setStyle('color', C.ink)
+      el.setStyle('borderColor', C.line2)
+      el.setStyle('backgroundColor', C.raised)
+    })
+    el.on('mouseleave', () => {
+      el.setStyle('color', c)
+      el.setStyle('borderColor', border)
+      el.setStyle('backgroundColor', bg)
+    })
+  }
+
+  return el
+}
+
+// thin N-cell meter: filled cells in ink, rest in hairline
+export function meter(parent, { value = 0, max = 5, cellW = 10, h = 5, props = {} } = {}) {
+  const row = new Box(parent, { d: 'flex', gap: 2, ...props })
+  const filled = Math.round((value / max) * (max || 1))
+  for (let i = 0; i < max; i++) {
+    new Box(row, {
+      w: cellW, h,
+      bg: i < filled ? C.ink : C.line,
+      o: i < filled ? 0.85 : 1,
+    })
+  }
+  return row
+}
+
+// narrow-screen check for layout switches
+export function isNarrow(px = 900) {
+  return window.innerWidth < px
+}
