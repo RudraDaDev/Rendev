@@ -147,13 +147,43 @@ scene('me', () => {
     overflow: 'auto',
   })
 
-  // portrait — pixel line-art of me at three, matted off its green ground
-  const slab = new Box(idCol, {
-    w: 150, h: 150, flex: 'none',
+  // ── pfp — pixel line-art of me at three, matted off its green ground
+  // the caption runs up the left edge, rotated, like a film splice
+  const pfpRow = new Box(idCol, {
+    d: 'flex', alignItems: 'stretch', gap: 9,
+    mb: 16, flex: 'none',
+  })
+
+  // stacked caption frame: hairline box, letters reading bottom → top
+  const capFrame = new Box(pfpRow, {
+    w: 22, flex: 'none',
+    border: `1px solid ${C.line}`,
+    bg: C.abyss,
+    d: 'flex', ai: 'center', jc: 'center',
+    pos: 'relative', overflow: 'hidden',
+  })
+
+  const capText = new Text(capFrame, {
+    text: '3yr old me :p',
+    fs: 9, ff: MONO, c: C.dim,
+    letterSpacing: '0.1em',
+    writingMode: 'vertical-rl',
+    transform: 'rotate(180deg)',
+    whiteSpace: 'nowrap',
+    userSelect: 'none',
+    transition: 'color 200ms',
+  })
+
+  crosshair(capFrame, 'tl', 4)
+  crosshair(capFrame, 'bl', 4)
+
+  // frame
+  const slab = new Box(pfpRow, {
+    w: 158, h: 136, flex: 'none',
     border: `1px solid ${C.line2}`,
     bg: C.panel,
-    p: 8,
-    pos: 'relative', mb: 14,
+    p: 7,
+    pos: 'relative',
     overflow: 'hidden',
     d: 'flex', ai: 'center', jc: 'center',
   })
@@ -165,37 +195,25 @@ scene('me', () => {
     fit: 'contain',
     preserveRatio: false,
     d: 'block',
-    transition: 'transform 320ms cubic-bezier(.2,.8,.2,1), filter 320ms',
+    transition: 'transform 320ms cubic-bezier(.2,.8,.2,1)',
   })
-
-  // caption strip, tucked into the bottom of the frame
-  const cap = new Box(slab, {
-    pos: 'absolute', bottom: 0, left: 0, right: 0,
-    p: '3px 6px',
-    bg: C.abyss,
-    borderTop: `1px solid ${C.line}`,
-    d: 'flex', jc: 'space-between', ai: 'center',
-    opacity: 0,
-    transition: 'opacity 200ms',
-    pointerEvents: 'none',
-  })
-  meta(cap, 'age 3', { c: C.dim })
-  meta(cap, 'me', { c: C.mute })
 
   crosshair(slab, 'tl', 5)
   crosshair(slab, 'br', 5)
 
-  slab.on('mouseenter', () => {
+  pfpRow.on('mouseenter', () => {
     portrait.setStyle('transform', 'scale(1.06)')
-    cap.setStyle('opacity', '1')
+    capText.setStyle('color', C.ink)
+    capFrame.setStyle('borderColor', C.line2)
   })
-  slab.on('mouseleave', () => {
+  pfpRow.on('mouseleave', () => {
     portrait.setStyle('transform', 'scale(1)')
-    cap.setStyle('opacity', '0')
+    capText.setStyle('color', C.dim)
+    capFrame.setStyle('borderColor', C.line)
   })
 
   new Text(idCol, {
-    text: IDENTITY.name, fs: 30, ff: PIXEL, fw: 700, c: C.ink,
+    text: IDENTITY.name, fs: 26, ff: PIXEL, fw: 700, c: C.ink,
     lh: '1', letterSpacing: '-0.01em', d: 'block',
   })
   meta(idCol, `@${IDENTITY.handle}`, { c: C.dim, mt: 6 })
