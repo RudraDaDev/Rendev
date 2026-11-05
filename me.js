@@ -1,85 +1,57 @@
-import { App, Box, Text, Button, Rectangle, csui } from './lib/csui.js'
+// ─────────────────────────────────────────────────────────────
+// me.js — the "me" door
+// rendered as a scene; no separate HTML document
+// ─────────────────────────────────────────────────────────────
+import { Box, Text, scene } from './lib/csui.js'
+import { C, PIXEL, MONO, shell, backBar, line } from './ui.js'
 
-// dev only, delete before shipping
-csui.debug(true)
-/* Example 1: Using Pixelify Sans for headings 
-h1 {
-  font-family: 'Pixelify Sans', sans-serif;
-  font-weight: 700;
-}
+scene('me', () => {
+  const { wrap, body } = shell({ title: 'me', footerRight: 'the person, allegedly' })
 
--- Example 2: Using Geist Mono for code blocks --
-code, pre {
-  font-family: 'Geist Mono', monospace;
-  font-weight: 400;
-}
+  backBar(body, 'home', 'back')
 
--- Example 3: Using Boldonse for specific titles --
-.brand-title {
-  font-family: 'Boldonse', sans-serif;
-}
-*/
-// ---------- root ----------
-const app = new App({
-  bg: '#0a0a0a',
-  c: '#fff',
-  ff: 'system-ui, sans-serif',
-  w: '100vw',
-  h: '100vh',
-  pos: 'relative',
-  overflow: 'hidden',
+  const pad = new Box(body, { p: '28px 24px', d: 'flex', fd: 'column', gap: 18 })
+
+  new Text(pad, {
+    text: "i'm rudra", fs: 'clamp(26px, 5vw, 44px)',
+    ff: PIXEL, fw: 700, c: C.ink, d: 'block', lh: '1.05',
+  })
+
+  new Text(pad, {
+    text: 'i build small, sharp tools on the web and i finish about half of them.',
+    fs: 13, c: C.dim, lh: '1.7', d: 'block', maxW: '52ch',
+  })
+
+  // deliberately a plain list — no cards, sharp corners only
+  const facts = new Box(pad, { d: 'flex', fd: 'column', mt: 6 })
+
+  line(facts, 'based', 'mumbai, india')
+  line(facts, 'working on', 'rendev — cheap static hosting', { dim: false })
+  line(facts, 'half-finished', 'brokenhours, afterbell')
+  line(facts, 'stack', 'vanilla js · csui · no frameworks')
+  line(facts, 'fonts', 'pixelify sans / geist mono', { dim: true })
+
+  const links = new Box(pad, { d: 'flex', gap: 14, mt: 8, flexWrap: 'wrap' })
+
+  ;[
+    { label: 'github', href: 'https://github.com/RudraDaDev' },
+    { label: 'rendev.in', href: 'https://rendev.in' },
+  ].forEach(l => {
+    const a = new Text(links, {
+      text: l.label, fs: 12, c: C.dim, ff: MONO,
+      cursor: 'pointer', borderBottom: `1px solid ${C.line}`,
+      transition: 'color 120ms, border-color 120ms',
+    })
+    a.on('mouseenter', () => {
+      a.setStyle('color', C.ink)
+      a.setStyle('borderBottomColor', C.ink)
+    })
+    a.on('mouseleave', () => {
+      a.setStyle('color', C.dim)
+      a.setStyle('borderBottomColor', C.line)
+    })
+    a.on('click', () => { window.open(l.href, '_blank', 'noopener') })
+  })
+
+  wrap.onMount(() => {})
 })
-
-const lefte = new Box("lefte",{
-  w: 550,
-  h: 900,
-  bg: '#000000',
-  pos: 'absolute',
-  top: 0,
-  left: 0,
-})
-
-// --- content ---
-
-const ribbon = new Rectangle('lefte',{
-    w: 600,
-    h: 90,
-    bg: '#333131',
-    rotation: 145,
-    pos: 'absolute',
-    top: -10,
-    left: -90,
-})
-
-const web = new Text('lefte',{
-    text: 'rendev.in',
-    c: '#fff',
-    ff: "'Pixelify Sans', sans-serif",
-    pos: 'absolute',
-    top: 60,
-    left: 10,
-    fs: 50,
-    rotation: -35
-})
-const webarr = new Text('lefte',{
-    text: '>',
-    c: '#fff',
-    ff: "'Pixelify Sans', sans-serif",
-    pos: 'absolute',
-    top: 149,
-    left: 10,
-    fs: 30,
-    rotation: -35
-})
-
-const head = new Text('lefte',{
-    text: "I'm",
-    c: '#fff',
-    ff: "'Pixelify Sans', sans-serif",
-    pos: 'absolute',
-    top: 200,
-    left: 10,
-    fs: 50,
-  
-})
-app.addChild(lefte)
