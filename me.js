@@ -181,7 +181,7 @@ scene('me', () => {
   const slab = new Box(pfpRow, {
     w: 158, h: 136, flex: 'none',
     border: `1px solid ${C.line2}`,
-    bg: C.panel,
+    bg: 'transparent',      // no panel fill behind the cutout
     p: 7,
     pos: 'relative',
     overflow: 'hidden',
@@ -195,6 +195,8 @@ scene('me', () => {
     fit: 'contain',
     preserveRatio: false,
     d: 'block',
+    // mirrored, so he faces back toward the identity column
+    transform: 'scaleX(-1)',
     transition: 'transform 320ms cubic-bezier(.2,.8,.2,1)',
   })
 
@@ -202,12 +204,12 @@ scene('me', () => {
   crosshair(slab, 'br', 5)
 
   pfpRow.on('mouseenter', () => {
-    portrait.setStyle('transform', 'scale(1.06)')
+    portrait.setStyle('transform', 'scaleX(-1) scale(1.06)')
     capText.setStyle('color', C.ink)
     capFrame.setStyle('borderColor', C.line2)
   })
   pfpRow.on('mouseleave', () => {
-    portrait.setStyle('transform', 'scale(1)')
+    portrait.setStyle('transform', 'scaleX(-1)')
     capText.setStyle('color', C.dim)
     capFrame.setStyle('borderColor', C.line)
   })
