@@ -19,12 +19,12 @@ const IDENTITY = {
   based: 'Mumbai, India',
   coords: '19.07N 72.87E',
   tz: 'IST · UTC+5:30',
-  role: 'web · systems · games',
+  role: 'web · systems · languages',
   status: 'open to interesting problems',
   blurb:
-    'I build small, sharp tools — mostly on the web, increasingly on bare metal. ' +
-    'No frameworks, no CSS files, no build step: vanilla JS and csui at the base, ' +
-    'C and a bootloader at the other end.',
+    'I build small, sharp tools — on the web, on bare metal, and occasionally in a ' +
+    'language of my own. C, JavaScript, Node, Bun, NativeScript, bash. No frameworks, ' +
+    'no CSS files, no build step.',
 }
 
 const STATS = [
@@ -135,14 +135,16 @@ const WORK = [
     id: 'krix',
     year: '2025',
     name: 'krix',
-    kind: 'language · parser',
-    state: 'toy',
-    score: 2,
-    summary: 'A toy language: lexer, parser, and the long tail of a grammar.',
+    kind: 'language · compiler',
+    state: 'wip',
+    score: 3,
+    summary: 'A general-purpose language, js-inspired, with a compiler that roasts you.',
     detail:
-      'Written to understand how much of a language you can hold in your head at once. ' +
-      'The lexer and parser survived; the type checker is where ambition met arithmetic.',
-    stack: ['parser', 'toy lang', 'js'],
+      'Two things make krix krix. The compiler has a personality: it insults you for the ' +
+      'mistake, then gives you the useful diagnostic underneath — useful error messages ' +
+      'with a bad attitude. Memory is a Lua-table model, with both automatic and manual ' +
+      'management, so you can let the runtime handle it or take the wheel yourself.',
+    stack: ['language design', 'compiler', 'lua tables', 'memory'],
     links: [],
   },
   {
@@ -177,13 +179,13 @@ const WORK = [
 ]
 
 const CAPABILITIES = [
-  { label: 'vanilla js / esm', score: 5 },
-  { label: 'dom + layout',     score: 5 },
-  { label: 'bare metal c',     score: 4 },
-  { label: 'design systems',   score: 4 },
-  { label: 'canvas / svg',     score: 3 },
-  { label: 'parsers / langs',  score: 3 },
-  { label: 'rust',             score: 2 },
+  { label: 'c',                score: 5 },
+  { label: 'javascript',       score: 5 },
+  { label: 'node.js',          score: 5 },
+  { label: 'bun',              score: 4 },
+  { label: 'nativescript',     score: 4 },
+  { label: 'bash',             score: 4 },
+  { label: 'compilers',        score: 3 },
 ]
 
 const TIMELINE = [
