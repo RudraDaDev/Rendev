@@ -1,0 +1,306 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100vw" height="100vh" viewBox="0 0 1000 1000" style="display:block">
+  <title>High-Speed Terminal Output</title>
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace, ui-monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* CRT / Scanline subtle aesthetic overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            z-index: 10;
+        }
+
+        #terminal-container {
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+        }
+
+        /* Hide scrollbar while preserving functionality */
+        #terminal-container::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        #terminal-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Proper inline cursor aligned precisely with text height */
+        .cursor {
+            display: inline-block;
+            width: 0.55em;
+            height: 1.15em;
+            background-color: #ffffff;
+            vertical-align: -0.15em;
+            margin-left: 1px;
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        /* Controls overlay (minimalist top-right float on hover) */
+        #controls {
+            position: fixed;
+            top: 1rem;
+            right: 1.5rem;
+            opacity: 0.15;
+            transition: opacity 0.3s ease;
+            z-index: 20;
+            display: flex;
+            gap: 0.5rem;
+        }
+        #controls:hover {
+            opacity: 0.9;
+        }
+        .btn {
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: #222;
+            border-color: #888;
+        }
+    </style>
+      </head>
+      <body>
+
+    <div class="scanlines"></div>
+
+    <!-- Quick minimalist controls overlay -->
+    <div id="controls">
+        <button class="btn" id="toggle-pause">PAUSE</button>
+        <button class="btn" id="speed-up">FAST++</button>
+        <button class="btn" id="clear-btn">CLEAR</button>
+    </div>
+
+    <!-- Main Terminal Container -->
+    <div id="terminal-container">
+        <span id="output"></span><span id="cursor" class="cursor"></span>
+    </div>
+
+    <script><![CDATA[
+        // Massive buffer of continuous terminal output logs
+        const LOG_DATA = [
+            "[  0.000000] Linux version 6.8.0-45-generic (buildd@lcy02-amd64-041) (gcc-13) #45-Ubuntu SMP PREEMPT_DYNAMIC",
+            "[  0.000000] Command line: BOOT_IMAGE=/boot/vmlinuz-6.8.0-45-generic root=UUID=8a2e1d7f-9c04-4e2b-bb12 quiet splash",
+            "[  0.000000] KERNEL supported cpus: Intel AMD Centaur zhaoxin",
+            "[  0.000000] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'",
+            "[  0.000000] x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'",
+            "[  0.000000] x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'",
+            "[  0.000000] BIOS-provided physical RAM map:",
+            "[  0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009d7ff] usable",
+            "[  0.000000] BIOS-e820: [mem 0x0000000000100000-0x00000000bfedffff] usable",
+            "[  0.000000] NX (Execute Disable) protection: active",
+            "[  0.000000] SMBIOS 3.3.0 present.",
+            "[  0.000000] DMI: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-1 04/01/2014",
+            "[  0.012480] Memory: 16384000K/16777216K available (14336K kernel code, 2451K rwdata, 10240K rodata)",
+            "[  0.024110] Kernel/User page tables isolation: enabled",
+            "[  0.048921] Synchronizing SMP CPUs...",
+            "[  0.061204] CPU0: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz (fam: 06, model: 8c, stepping: 01)",
+            "[  0.075412] Performance Events: PEBS fmt3+, Skylake events, full-width counters, Intel PMU driver.",
+            "[  0.104210] NMI watchdog: enabled on all CPUs, softlockup detector built-in.",
+            "[  0.128400] devtmpfs: initialized",
+            "[  0.145020] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns",
+            "[  0.180291] NET: Registered top protocol family AF_INET",
+            "[  0.201488] NET: Registered top protocol family AF_INET6",
+            "[  0.220194] PCI: Using configuration type 1 for base access",
+            "[  0.250411] System V IPC: initialized",
+            "[  0.280102] Initializing Cryptographic API...",
+            "root@core-cluster-01:~# systemctl status cluster-ingress.service",
+            "● cluster-ingress.service - Distributed Gateway Controller",
+            "     Loaded: loaded (/lib/systemd/system/cluster-ingress.service; enabled; vendor preset: enabled)",
+            "     Active: active (running) since Wed 2026-11-04 21:30:11 UTC; 42s ago",
+            "   Main PID: 10482 (envoy)",
+            "      Tasks: 32 (limit: 19124)",
+            "     Memory: 184.2M",
+            "        CPU: 1.482s",
+            "     CGroup: /system.slice/cluster-ingress.service",
+            "             └─10482 /usr/local/bin/envoy -c /etc/envoy/envoy.yaml --service-cluster ingress",
+            "",
+            "Nov 04 21:30:11 core-cluster-01 envoy[10482]: [info][config] [source/server/configuration_impl.cc:127] loading 1 cluster(s)",
+            "Nov 04 21:30:11 core-cluster-01 envoy[10482]: [info][config] [source/server/configuration_impl.cc:131] loading 2 listener(s)",
+            "Nov 04 21:30:12 core-cluster-01 envoy[10482]: [info][runtime] [source/server/runtime_impl.cc:440] updated symlink /etc/envoy/runtime",
+            "root@core-cluster-01:~# ./deploy_pipeline.sh --target=production --parallel-threads=8",
+            "[*] Initializing deployment script v4.19.0-release...",
+            "[*] Checking environment variables... OK",
+            "[*] Target region: us-east-1 (N. Virginia)",
+            "[*] Reading state storage s3://deploy-state-bucket-prod/terraform.tfstate",
+            "[+] Authenticating against vault.internal.net:8200...",
+            "[+] Token acquired: s.vaultToken_99a80b1e1d0",
+            "[+] Executing pre-flight checks across nodes:",
+            "  -> Node 01 (10.0.12.101): Online [RTT 1.2ms]",
+            "  -> Node 02 (10.0.12.102): Online [RTT 1.1ms]",
+            "  -> Node 03 (10.0.12.103): Online [RTT 1.5ms]",
+            "  -> Node 04 (10.0.12.104): Online [RTT 0.9ms]",
+            "[*] Building container artifact target: build-app-image:latest",
+            "Step 1/14 : FROM golang:1.22-alpine AS builder",
+            " ---> e2d19f8021b1",
+            "Step 2/14 : WORKDIR /app",
+            " ---> Using cache",
+            " ---> 4e0f19ab32c9",
+            "Step 3/14 : COPY go.mod go.sum ./",
+            " ---> Using cache",
+            " ---> 8c7219e2f4aa",
+            "Step 4/14 : RUN go mod download",
+            " ---> Running in b12a028fa1",
+            "Downloading github.com/gin-gonic/gin v1.9.1",
+            "Downloading github.com/prometheus/client_golang v1.18.0",
+            "Downloading golang.org/x/crypto v0.21.0",
+            "Downloading github.com/lib/pq v1.10.9",
+            "Step 5/14 : COPY . .",
+            "Step 6/14 : CGO_ENABLED=0 GOOS=linux go build -ldflags=\"-w -s\" -o /main ./cmd/server",
+            "Compiling package main...",
+            "Compiling package internal/auth...",
+            "Compiling package internal/database...",
+            "Compiling package internal/telemetry...",
+            "Compiling package internal/router...",
+            "Linker: Strip binary, symbols purged.",
+            "Build complete. Binary size: 14.2 MB.",
+            "Step 7/14 : FROM scratch",
+            "Step 8/14 : COPY --from=builder /main /main",
+            "Step 9/14 : COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/",
+            "Step 10/14 : ENTRYPOINT [\"/main\"]",
+            "Successfully built SHA256:d8291a0c4f82029c118e40f...",
+            "Successfully tagged build-app-image:latest",
+            "",
+            "[*] Pushing image to registry.internal.net/prod/main-api:v2.41.0",
+            "d8291a0c4f82: Pushing [==================================>] 14.2MB/14.2MB",
+            "4e0f19ab32c9: Layer already exists",
+            "8c7219e2f4aa: Layer already exists",
+            "digest: sha256:d8291a0c4f82029c118e40f8019a3b2e774f11 opacity: 100%",
+            "",
+            "[*] Initiating rolling deployment across Kubernetes cluster [namespace: default]",
+            "deployment.apps/api-server updated",
+            "Waiting for rollout to finish: 0 of 5 updated replicas are available...",
+            "Waiting for rollout to finish: 1 of 5 updated replicas are available...",
+            "Waiting for rollout to finish: 3 of 5 updated replicas are available...",
+            "deployment.apps/api-server successfully rolled out",
+            "",
+            "root@core-cluster-01:~# tcpdump -i eth0 -n -c 10 port 443",
+            "tcpdump: verbose output suppressed, use -v[v] or --s[v] for full protocol decode",
+            "listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes",
+            "21:32:01.104829 IP 10.0.12.101.443 > 192.168.1.50.51002: Flags [P.], seq 1048291:1049382, ack 1",
+            "21:32:01.105120 IP 192.168.1.50.51002 > 10.0.12.101.443: Flags [.], ack 1049382",
+            "21:32:01.108933 IP 10.0.12.102.443 > 192.168.1.51.52119: Flags [S.], seq 8891023, ack 0",
+            "21:32:01.112001 IP 10.0.12.103.443 > 10.0.1.12.39801: Flags [F.], seq 1204, ack 98",
+            "21:32:01.115482 IP 10.0.12.104.443 > 192.168.1.88.60192: Flags [P.], seq 401:805, ack 1",
+            "10 packets captured",
+            "10 packets received by filter",
+            "0 packets dropped by kernel",
+            "",
+            "root@core-cluster-01:~# cat /var/log/auth.log | grep -i \"failed\"",
+            "Nov 04 18:02:11 core-cluster-01 sshd[4910]: Failed password for invalid user admin from 185.220.101.5 port 41208 ssh2",
+            "Nov 04 18:02:14 core-cluster-01 sshd[4912]: Failed password for invalid user root from 185.220.101.5 port 41220 ssh2",
+            "Nov 04 18:02:17 core-cluster-01 sshd[4915]: Failed password for invalid user guest from 185.220.101.5 port 41232 ssh2",
+            "Nov 04 19:44:02 core-cluster-01 sshd[8011]: Failed password for root from 45.142.120.10 port 50192 ssh2",
+            "Nov 04 19:44:05 core-cluster-01 sshd[8013]: Failed password for root from 45.142.120.10 port 50204 ssh2",
+            "",
+            "root@core-cluster-01:~# htop --version",
+            "htop 3.3.0 - (C) 2004-2023 Hisham Muhammad, BennySient",
+            "root@core-cluster-01:~# echo \"[+] Operation complete. System synchronized.\"",
+            "[+] Operation complete. System synchronized."
+        ];
+
+        // Flatten all text into a single continuous stream buffer
+        const FULL_TEXT = LOG_DATA.join('\n') + '\n\n';
+
+        const outputEl = document.getElementById('output');
+        const container = document.getElementById('terminal-container');
+        const btnPause = document.getElementById('toggle-pause');
+        const btnSpeed = document.getElementById('speed-up');
+        const btnClear = document.getElementById('clear-btn');
+
+        let charIndex = 0;
+        let isPaused = false;
+        let speedMultiplier = 1;
+
+        function renderStep() {
+            if (!isPaused) {
+                // Character skip logic: skip between 1 and 4 characters per animation step
+                const skipAmount = Math.floor(Math.random() * 4) + 1;
+                const effectiveSkip = skipAmount * speedMultiplier;
+
+                charIndex += effectiveSkip;
+
+                // Infinite seamless loop: wrap around continuous buffer seamlessly
+                if (charIndex >= FULL_TEXT.length) {
+                    charIndex = charIndex % FULL_TEXT.length;
+                    outputEl.textContent = "";
+                }
+
+                outputEl.textContent = FULL_TEXT.substring(0, charIndex);
+
+                // Auto-scroll to keep cursor in view
+                container.scrollTop = container.scrollHeight;
+            }
+
+            // High-speed execution loop with micro-delay jitter for rapid terminal effect
+            let delay = Math.random() < 0.05 ? Math.floor(Math.random() * 50) + 20 : Math.floor(Math.random() * 10) + 2;
+            setTimeout(renderStep, delay);
+        }
+
+        // Controls
+        btnPause.addEventListener('click', () => {
+            isPaused = !isPaused;
+            btnPause.textContent = isPaused ? 'RESUME' : 'PAUSE';
+        });
+
+        btnSpeed.addEventListener('click', () => {
+            speedMultiplier = speedMultiplier === 1 ? 3 : (speedMultiplier === 3 ? 6 : 1);
+            btnSpeed.textContent = `SPEED (x${speedMultiplier})`;
+        });
+
+        btnClear.addEventListener('click', () => {
+            charIndex = 0;
+            outputEl.textContent = "";
+        });
+
+        // Initialize animation execution on window load
+        window.onload = function() {
+            renderStep();
+        };
+    ]]></script>
+</body>
+    </html>
+  </foreignObject>
+</svg>
