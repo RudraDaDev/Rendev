@@ -10,6 +10,7 @@ import { Box, Text, Image, scene, go } from './lib/csui.js'
 import {
   C, HAIRLINE, PIXEL, MONO,
   shell, backBar, meta, rule, crosshair, heading, meter, chip,
+  pressable, setExpanded, onNarrow, isNarrow, motion,
 } from './ui.js'
 
 // ─── data ────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const STATS = [
 const WORK = [
   {
     id: 'rendev',
+    why: "Written because every static host wanted a build step I did not need.",
     year: '2026',
     name: 'rendev.in',
     kind: 'product · static hosting',
@@ -55,6 +57,7 @@ const WORK = [
   },
   {
     id: 'csui',
+    why: "Written because I kept writing the same 200 lines of createElement.",
     year: '2026',
     name: 'csui',
     kind: 'library · dom wrapper',
@@ -74,6 +77,7 @@ const WORK = [
   },
   {
     id: 'kargohold',
+    why: "Written because four input devices should not need four OSes.",
     year: '2026',
     name: 'kargohold',
     kind: 'bootloader · rpi 3b+',
@@ -89,6 +93,7 @@ const WORK = [
   },
   {
     id: 'ili9486',
+    why: "Written because a display controller is the easiest way to learn SPI the hard way.",
     year: '2026',
     name: 'ili9486 drivers',
     kind: 'systems · c drivers',
@@ -104,6 +109,7 @@ const WORK = [
   },
   {
     id: 'smallhours',
+    why: "Written because it was 2am and shipping beats polishing.",
     year: '2025',
     name: 'smallhours',
     kind: 'site · gh pages',
@@ -119,6 +125,7 @@ const WORK = [
   },
   {
     id: 'tyreroads',
+    why: "Written to look at road surfaces. Learned scope creep instead.",
     year: '2025',
     name: 'tyreroads',
     kind: 'web · experiment',
@@ -133,6 +140,7 @@ const WORK = [
   },
   {
     id: 'krix',
+    featured: true,
     year: '2025',
     name: 'krix',
     kind: 'language · compiler',
@@ -170,6 +178,7 @@ const WORK = [
   },
   {
     id: 'afterbell',
+    why: "Written because the school needed it. Nobody needed it.",
     year: '2025',
     name: 'afterbell',
     kind: 'app · school social',
@@ -185,6 +194,7 @@ const WORK = [
   },
   {
     id: 'brokenhours',
+    why: "Written because games are the only thing I will not outsource.",
     year: '2026',
     name: 'brokenhours',
     kind: 'studio · games',
@@ -224,6 +234,27 @@ const LINKS = [
   { label: 'email',     value: 'hi@rendev.in',          href: 'mailto:hi@rendev.in' },
 ]
 
+// ─── deep links ──────────────────────────────────────────────
+// ?project=krix   or   #krix   opens that panel on load
+const narrowPad = () => (isNarrow(900) ? '14px 14px' : '16px 18px')
+
+function requestedProject() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('project')
+    const h = window.location.hash.replace(/^#/, '')
+    return (q || h || '').toLowerCase()
+  } catch { return '' }
+}
+
+function pushProject(id) {
+  try {
+    const url = new URL(window.location.href)
+    if (id) url.searchParams.set('project', id)
+    else url.searchParams.delete('project')
+    window.history.replaceState({}, '', url)
+  } catch { /* file:// or sandboxed */ }
+}
+
 // ─── scene ───────────────────────────────────────────────────
 scene('me', () => {
   const { wrap, body } = shell({
@@ -237,18 +268,34 @@ scene('me', () => {
 
   backBar(body, 'home', { path: '/portfolio' })
 
-  // two columns: identity (fixed) | record (scrolls)
-  const cols = new Box(body, { d: 'flex', flex: '1', overflow: 'hidden' })
+  // two columns on wide screens, one stacked column when narrow
+  const narrow = isNarrow(900)
+  const cols = new Box(body, {
+    d: 'flex', fd: narrow ? 'column' : 'row',
+    flex: '1', overflow: narrow ? 'auto' : 'hidden',
+  })
 
   // ── identity column ──
   const idCol = new Box(cols, {
-    w: 320, flex: 'none',
-    p: '24px 20px',
-    borderRight: HAIRLINE,
+    w: narrow ? '100%' : 320, flex: narrow ? 'none' : 'none',
+    p: narrow ? '20px 16px' : '24px 20px',
+    borderRight: narrow ? 'none' : HAIRLINE,
+    borderBottom: narrow ? HAIRLINE : 'none',
     bg: C.abyss,
     d: 'flex', fd: 'column', gap: 0,
-    overflow: 'auto',
+    overflow: narrow ? 'visible' : 'auto',
   })
+
+  const unbindCols = onNarrow(900, isNarrowNow => {
+    cols.setStyle('flexDirection', isNarrowNow ? 'column' : 'row')
+    cols.setStyle('overflow', isNarrowNow ? 'auto' : 'hidden')
+    idCol.setStyle('width', isNarrowNow ? '100%' : '320px')
+    idCol.setStyle('padding', isNarrowNow ? '20px 16px' : '24px 20px')
+    idCol.setStyle('borderRight', isNarrowNow ? 'none' : HAIRLINE)
+    idCol.setStyle('borderBottom', isNarrowNow ? HAIRLINE : 'none')
+    idCol.setStyle('overflow', isNarrowNow ? 'visible' : 'auto')
+  })
+  wrap.onDestroy(unbindCols)
 
   // ── pfp — pixel line-art of me at three, matted off its green ground
   // the caption runs up the left edge, rotated, like a film splice
@@ -282,7 +329,7 @@ scene('me', () => {
 
   // frame
   const slab = new Box(pfpRow, {
-    w: 158, h: 136, flex: 'none',
+    w: isNarrow(900) ? 120 : 158, h: isNarrow(900) ? 104 : 136, flex: 'none',
     border: `1px solid ${C.line2}`,
     bg: 'transparent',      // no panel fill behind the cutout
     p: 7,
@@ -300,14 +347,14 @@ scene('me', () => {
     d: 'block',
     // mirrored, so he faces back toward the identity column
     transform: 'scaleX(-1)',
-    transition: 'transform 320ms cubic-bezier(.2,.8,.2,1)',
+    transition: motion() ? 'transform 320ms cubic-bezier(.2,.8,.2,1)' : 'none',
   })
 
   crosshair(slab, 'tl', 5)
   crosshair(slab, 'br', 5)
 
   pfpRow.on('mouseenter', () => {
-    portrait.setStyle('transform', 'scaleX(-1) scale(1.06)')
+    if (motion()) portrait.setStyle('transform', 'scaleX(-1) scale(1.06)')
     capText.setStyle('color', C.ink)
     capFrame.setStyle('borderColor', C.line2)
   })
@@ -354,13 +401,17 @@ scene('me', () => {
   const dot = new Box(live, { w: 5, h: 5, bg: C.ink, o: 0.9 })
   meta(live, 'available', { c: C.dim })
 
-  // slow pulse — the only animation on the page that never stops
-  let pulse = 1
-  const pulseTimer = setInterval(() => {
-    pulse = pulse === 1 ? 0.35 : 1
-    dot.setStyle('opacity', String(pulse))
-  }, 1100)
-  wrap.onDestroy(() => clearInterval(pulseTimer))
+  // slow pulse — skipped entirely when the user asks for less motion
+  if (motion()) {
+    let pulse = 1
+    const pulseTimer = setInterval(() => {
+      pulse = pulse === 1 ? 0.35 : 1
+      dot.setStyle('opacity', String(pulse))
+    }, 1100)
+    wrap.onDestroy(() => clearInterval(pulseTimer))
+  } else {
+    dot.setStyle('opacity', '0.9')
+  }
 
   LINKS.forEach(l => {
     const row = new Box(bottom, {
@@ -393,7 +444,8 @@ scene('me', () => {
   // ── record column ──
   const rec = new Box(cols, {
     flex: '1', d: 'flex', fd: 'column',
-    overflow: 'auto', pos: 'relative',
+    overflow: narrow ? 'visible' : 'auto', pos: 'relative',
+    width: narrow ? '100%' : 'auto',
   })
 
   const recPad = new Box(rec, { p: '24px 26px 40px', d: 'flex', fd: 'column' })
@@ -408,7 +460,8 @@ scene('me', () => {
 
   // stat strip — four equal cells, hairline separated
   const stats = new Box(recPad, {
-    d: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+    d: 'grid',
+    gridTemplateColumns: isNarrow(560) ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
     gap: 1, bg: C.line,
     border: `1px solid ${C.line}`,
     mt: 22,
@@ -423,6 +476,56 @@ scene('me', () => {
     meta(cell, s.label, { c: C.dim })
     meta(cell, s.note, { c: C.mute })
   })
+
+  const rowsApi = new Map()
+
+  // ── featured: the one thing to look at first ──
+  const feat = WORK.find(w => w.featured) || WORK[0]
+  if (feat) {
+    const card = new Box(recPad, {
+      mt: 22, p: narrowPad(), bg: C.panel,
+      border: `1px solid ${C.line2}`,
+      d: 'flex', fd: 'column', gap: 8,
+      pos: 'relative', cursor: 'pointer',
+      transition: 'background 140ms',
+    })
+    crosshair(card, 'tr')
+
+    const top = new Box(card, { d: 'flex', jc: 'space-between', ai: 'center', gap: 10 })
+    meta(top, 'featured', { c: C.dim })
+    chip(top, feat.state)
+
+    new Text(card, {
+      text: feat.name, fs: 30, ff: PIXEL, fw: 700, c: C.ink,
+      lh: '1', letterSpacing: '-0.01em', d: 'block',
+    })
+    new Text(card, {
+      text: feat.summary, fs: 11, ff: MONO, c: C.dim, lh: '1.7', maxW: '56ch',
+    })
+
+    // show the first diagnostic right here — the roast is the pitch
+    if (feat.diagnostics?.length) {
+      const d0 = feat.diagnostics[0]
+      const line = new Box(card, {
+        mt: 4, p: '8px 10px', bg: C.abyss,
+        borderLeft: `2px solid ${C.line2}`,
+        d: 'flex', fd: 'column', gap: 2,
+      })
+      new Text(line, {
+        text: d0.roast, fs: 10, ff: PIXEL, c: C.ink, lh: '1.7',
+      })
+      meta(line, `— krix, on ${d0.file}:${d0.line}`, { c: C.mute })
+    }
+
+    const openIt = () => {
+      const r = rowsApi.get(feat.id)
+      if (r) r.open()
+    }
+    pressable(card, { label: `featured project: ${feat.name}` })
+    card.on('click', openIt)
+    card.on('mouseenter', () => card.setStyle('backgroundColor', C.raised))
+    card.on('mouseleave', () => card.setStyle('backgroundColor', C.panel))
+  }
 
   // ── work index ──
   const workHead = new Box(recPad, {
@@ -472,7 +575,7 @@ scene('me', () => {
 
     // right: kind, meter, state, chevron
     const right = new Box(row, { d: 'flex', ai: 'center', gap: 12, flex: 'none' })
-    meta(right, item.kind, { c: C.mute, ta: 'right', d: 'block', maxW: 150 })
+    if (!isNarrow(900)) meta(right, item.kind, { c: C.mute, ta: 'right', d: 'block', maxW: 150 })
     meter(right, { value: item.score, max: 5, cellW: 7, h: 4 })
     chip(right, item.state)
     const caret = new Text(right, {
@@ -486,13 +589,21 @@ scene('me', () => {
       d: 'grid',
       gridTemplateRows: '0fr',
       overflow: 'hidden',
-      transition: 'grid-template-rows 220ms cubic-bezier(.2,.8,.2,1)',
+      transition: motion() ? 'grid-template-rows 220ms cubic-bezier(.2,.8,.2,1)' : 'none',
     })
     const panelClip = new Box(panel, { minHeight: 0, overflow: 'hidden' })
     const panelInner = new Box(panelClip, {
-      p: '0 2px 16px 68px',
+      p: isNarrow(900) ? '0 2px 18px 2px' : '0 2px 16px 68px',
       d: 'flex', fd: 'column', gap: 12,
     })
+
+    if (item.why) {
+      new Text(panelInner, {
+        text: item.why,
+        fs: 10, c: C.mute, ff: MONO, lh: '1.7',
+        fontStyle: 'italic', d: 'block',
+      })
+    }
 
     new Text(panelInner, {
       text: item.detail,
@@ -610,25 +721,34 @@ scene('me', () => {
       caret.setStyle('color', C.ink)
     }
 
-    row.on('click', () => {
+    const toggle = () => {
       const isOpen = openId === item.id
 
       // close whichever is open
       if (openId) {
         const prev = rows.get(openId)
-        if (prev) prev.collapse()
+        if (prev) { prev.collapse(); setExpanded(prev.row, false) }
       }
 
       if (isOpen) {
         openId = null
         setState()
+        setExpanded(row, false)
+        pushProject(null)
         return
       }
 
       expand()
       openId = item.id
       setState()
-    })
+      setExpanded(row, true)
+      pushProject(item.id)
+    }
+
+    row.on('click', toggle)
+
+    // keyboard + screen-reader affordance
+    pressable(row, { label: `${item.name} — ${item.kind}`, expanded: false })
 
     row.on('mouseenter', () => {
       if (openId === item.id) return
@@ -642,12 +762,42 @@ scene('me', () => {
       caret.setStyle('color', openId === item.id ? C.ink : C.mute)
     })
 
-    rows.set(item.id, { row, panel, collapse, expand })
+    const api = {
+      row, panel, collapse, expand,
+      open() {
+        if (openId === item.id) return
+        if (openId) {
+          const prev = rows.get(openId)
+          if (prev) { prev.collapse(); setExpanded(prev.row, false) }
+        }
+        expand()
+        openId = item.id
+        setState()
+        setExpanded(row, true)
+        pushProject(item.id)
+      },
+      close() { collapse(); setExpanded(row, false) },
+    }
+    rows.set(item.id, api)
+    rowsApi.set(item.id, api)
   })
+
+  // honour ?project=… / #… on open. deferred a tick so layout settles.
+  const wanted = requestedProject()
+  if (wanted) {
+    const target = rowsApi.get(wanted)
+    if (target) {
+      Promise.resolve().then(() => {
+        target.open()
+        // optional: not every engine exposes this (and jsdom does not)
+        target.row.el.scrollIntoView?.({ block: 'center', behavior: motion() ? 'smooth' : 'auto' })
+      })
+    }
+  }
 
   // ── capabilities + timeline, side by side ──
   const lower = new Box(recPad, {
-    d: 'grid', gridTemplateColumns: '1fr 1fr',
+    d: 'grid', gridTemplateColumns: isNarrow(760) ? '1fr' : '1fr 1fr',
     gap: 26, mt: 28,
   })
 
@@ -687,9 +837,28 @@ scene('me', () => {
     meta(row, t.note, { c: C.mute, ta: 'right' })
   })
 
-  // ── footer note ──
+  // ── why these exist ──
+  const why = new Box(recPad, {
+    mt: 32, d: 'flex', fd: 'column', gap: 10, maxW: '62ch',
+  })
+  meta(why, 'why', { c: C.dim })
+  rule(why, { m: '0 0 6px 0' })
+  new Text(why, {
+    text: 'Most of these started as a question I could not answer by reading. ' +
+          'krix exists because I wanted to know where memory actually goes when nobody ' +
+          'is holding the bill — so the compiler roasts you, and the table keeps score. ' +
+          'kargohold exists because a Pi on a shelf is a boring Pi, and ili9486 exists ' +
+          'because kargohold needed something to draw a menu on before it had a menu.',
+    fs: 12, c: C.dim, ff: MONO, lh: '2', d: 'block',
+  })
+  new Text(why, {
+    text: 'None of it is hosted polish. All of it got finished enough to be wrong in public.',
+    fs: 11, c: C.mute, ff: MONO, lh: '1.9', d: 'block', mt: 2,
+  })
+
+  // ── colophon ──
   const note = new Box(recPad, {
-    mt: 30, p: '14px 16px',
+    mt: 24, p: narrowPad(),
     border: `1px solid ${C.line}`,
     bg: C.panel, maxW: 520,
     d: 'flex', fd: 'column', gap: 6, pos: 'relative',
@@ -698,8 +867,8 @@ scene('me', () => {
   meta(note, 'how this page is built', { c: C.mute })
   new Text(note, {
     text: 'One scene, no HTML page of its own. Rows expand in place instead of routing, ' +
-          'so the record stays one column and the URL never changes. Edit the arrays at ' +
-          'the top of me.js to update any of it.',
+          'and ?project=<name> links straight to one of them. Edit the arrays at the top ' +
+          'of me.js to update any of it.',
     fs: 10, c: C.dim, ff: MONO, lh: '1.85',
   })
 })

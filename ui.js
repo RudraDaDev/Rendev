@@ -11,17 +11,18 @@ import { Box, Text, go } from './lib/csui.js'
 
 // ── palette ──────────────────────────────────────────────────
 // navy ramp + a single monochrome accent ramp (no hues)
+// every text token is measured against C.bg and clears WCAG AA (4.5:1)
 export const C = {
   abyss:  '#05070f',   // page ground
   bg:     '#080c17',   // shell
   panel:  '#0b1120',   // cells
   raised: '#101728',   // hover
-  ink:    '#e6ebf5',   // primary text / accent
-  ink2:   '#c3cbdd',
-  dim:    '#6b7688',
-  mute:   '#3d4657',
-  line:   '#161f33',   // hairline
-  line2:  '#1f2a42',   // hairline, brighter
+  ink:    '#e6ebf5',   // 16.34 — primary text / accent
+  ink2:   '#c3cbdd',   // 12.00
+  dim:    '#8e9bb0',   //  6.94 — body copy
+  mute:   '#7c8798',   //  5.37 — metadata, captions
+  line:   '#1b2438',   // hairline
+  line2:  '#2a3752',   // hairline, brighter
 }
 
 // monochrome accent ramp — doors step down through it
@@ -160,11 +161,13 @@ export function shell({
     p: 0,
   })
 
+  const narrowNow = isNarrow(760)
+
   const frame = new Box(wrap, {
-    w: 'min(1180px, 94vw)',
-    h: 'min(760px, 92vh)',
+    w: narrowNow ? '100vw' : 'min(1180px, 94vw)',
+    h: narrowNow ? '100vh' : 'min(760px, 92vh)',
     bg: C.bg,
-    border: HAIRLINE,
+    border: narrowNow ? 'none' : HAIRLINE,
     d: 'flex', fd: 'column',
     pos: 'relative',
     overflow: 'hidden',
@@ -209,11 +212,12 @@ export function shell({
   })
 
   const railEl = new Box(mid, {
-    w: 32, flex: 'none',
+    w: narrowNow ? 18 : 32, flex: 'none',
     borderRight: HAIRLINE,
     bg: C.abyss,
     d: 'flex', ai: 'center', jc: 'center',
     overflow: 'hidden',
+    transition: 'width 200ms',
   })
 
   new Text(railEl, {
@@ -243,6 +247,15 @@ export function shell({
   crosshair(frame, 'tr')
   crosshair(frame, 'bl')
   crosshair(frame, 'br')
+
+  // follow the breakpoint for the life of the scene
+  const unbind = onNarrow(760, narrow => {
+    frame.setStyle('width', narrow ? '100vw' : 'min(1180px, 94vw)')
+    frame.setStyle('height', narrow ? '100vh' : 'min(760px, 92vh)')
+    frame.setStyle('borderWidth', narrow ? '0' : '1px')
+    railEl.setStyle('width', narrow ? '18px' : '32px')
+  })
+  frame.onDestroy(unbind)
 
   return { wrap, frame, topbar, brand, clock, body, foot, rail: railEl }
 }
@@ -371,4 +384,63 @@ export function meter(parent, { value = 0, max = 5, cellW = 10, h = 5, props = {
 // narrow-screen check for layout switches
 export function isNarrow(px = 900) {
   return window.innerWidth < px
+}
+
+// respects prefers-reduced-motion — zero out durations when set
+export function motion() {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1
+  } catch { return 1 }
+}
+
+// parse a ms value out of a transition string, scaled by the motion pref
+export function ms(str, fallback = 200) {
+  const m = /([\d.]+)ms/.exec(str || '')
+  const v = m ? parseFloat(m[1]) : fallback
+  return motion() ? v : 0
+}
+
+// ── accessibility helpers ────────────────────────────────────
+// turn any element into a real button for keyboard + screen readers
+export function pressable(el, { label = null, expanded = null } = {}) {
+  el.el.setAttribute('role', 'button')
+  el.el.setAttribute('tabindex', '0')
+  if (label) el.el.setAttribute('aria-label', label)
+  if (expanded !== null) el.el.setAttribute('aria-expanded', String(expanded))
+
+  el.el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      el.el.click()
+    }
+  })
+
+  // visible focus ring that matches the system
+  el.el.addEventListener('focus', () => {
+    el.el.style.outline = `1px solid ${C.ink}`
+    el.el.style.outlineOffset = '-1px'
+  })
+  el.el.addEventListener('blur', () => { el.el.style.outline = 'none' })
+
+  return el
+}
+
+export function setExpanded(el, value) {
+  el.el.setAttribute('aria-expanded', String(value))
+}
+
+// ── responsive: subscribe to a breakpoint ───────────────────
+// cb(isNarrow) runs immediately and on every crossing.
+export function onNarrow(px, cb) {
+  let state = window.innerWidth < px
+  const apply = () => {
+    const next = window.innerWidth < px
+    if (next === state) return
+    state = next
+    cb(state)
+  }
+  const off = () => window.removeEventListener('resize', apply)
+  window.addEventListener('resize', apply)
+  cb(state)
+  return off
 }
