@@ -6,7 +6,7 @@
 //            hairlines stay on the grid, nothing navigates away
 // content:  all local data, edit the arrays at the top
 // ─────────────────────────────────────────────────────────────
-import { Box, Text, scene, go } from './lib/csui.js'
+import { Box, Text, Image, scene, go } from './lib/csui.js'
 import {
   C, HAIRLINE, PIXEL, MONO,
   shell, backBar, meta, rule, crosshair, heading, meter, chip,
@@ -147,17 +147,52 @@ scene('me', () => {
     overflow: 'auto',
   })
 
-  // avatar slab — a monogram block, not a photo
+  // portrait — pixel line-art of me at three, matted off its green ground
   const slab = new Box(idCol, {
-    w: 64, h: 64,
+    w: 150, h: 150, flex: 'none',
     border: `1px solid ${C.line2}`,
     bg: C.panel,
-    d: 'flex', ai: 'center', jc: 'center',
+    p: 8,
     pos: 'relative', mb: 14,
+    overflow: 'hidden',
+    d: 'flex', ai: 'center', jc: 'center',
   })
+
+  const portrait = new Image(slab, {
+    src: './assets/portrait.png',
+    alt: 'Rudra at three years old, pixel line art',
+    w: '100%', h: '100%',
+    fit: 'contain',
+    preserveRatio: false,
+    d: 'block',
+    transition: 'transform 320ms cubic-bezier(.2,.8,.2,1), filter 320ms',
+  })
+
+  // caption strip, tucked into the bottom of the frame
+  const cap = new Box(slab, {
+    pos: 'absolute', bottom: 0, left: 0, right: 0,
+    p: '3px 6px',
+    bg: C.abyss,
+    borderTop: `1px solid ${C.line}`,
+    d: 'flex', jc: 'space-between', ai: 'center',
+    opacity: 0,
+    transition: 'opacity 200ms',
+    pointerEvents: 'none',
+  })
+  meta(cap, 'age 3', { c: C.dim })
+  meta(cap, 'me', { c: C.mute })
+
   crosshair(slab, 'tl', 5)
   crosshair(slab, 'br', 5)
-  new Text(slab, { text: 'RD', fs: 22, ff: PIXEL, fw: 700, c: C.ink, letterSpacing: '0.02em' })
+
+  slab.on('mouseenter', () => {
+    portrait.setStyle('transform', 'scale(1.06)')
+    cap.setStyle('opacity', '1')
+  })
+  slab.on('mouseleave', () => {
+    portrait.setStyle('transform', 'scale(1)')
+    cap.setStyle('opacity', '0')
+  })
 
   new Text(idCol, {
     text: IDENTITY.name, fs: 30, ff: PIXEL, fw: 700, c: C.ink,
