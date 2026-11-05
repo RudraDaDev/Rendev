@@ -147,15 +147,26 @@ const WORK = [
     stack: ['language design', 'compiler', 'lua tables', 'memory'],
     links: [],
     // rendered as a krix diagnostic inside the panel
-    diagnostic: {
-      file: 'leak.kx',
-      line: '14',
-      code: 'let buffer = open("dump.bin")',
-      span: '               ^^^^^^^^^^^^^^^^^^',
-      error: 'krix: reference to `buffer` outlives its scope',
-      help: 'nothing here frees it. it will not free itself.',
-      roast: "The memory leaker so much it's basically a fucking faucet now",
-    },
+    diagnostics: [
+      {
+        file: 'leak.kx',
+        line: '14',
+        code: 'let buffer = open("dump.bin")',
+        span: '               ^^^^^^^^^^^^^^^^^^',
+        error: 'krix: reference to `buffer` outlives its scope',
+        help: 'nothing here frees it. it will not free itself.',
+        roast: "The memory leaker so much it's basically a fucking faucet now",
+      },
+      {
+        file: 'leak.kx',
+        line: '19',
+        code: 'free(buffer)          # "just to be safe"',
+        span: '          ^^^^^^',
+        error: 'krix: double free — `buffer` was released at line 14',
+        help: 'valgrind will confirm. it is very pleased with itself.',
+        roast: "valgrinds proud. I'm not.",
+      },
+    ],
   },
   {
     id: 'afterbell',
@@ -491,68 +502,72 @@ scene('me', () => {
     const chips = new Box(panelInner, { d: 'flex', gap: 6, flexWrap: 'wrap' })
     item.stack.forEach(s => chip(chips, s))
 
-    // krix-style diagnostic block: snippet, error, help, then the roast
-    if (item.diagnostic) {
-      const d = item.diagnostic
+    // krix-style diagnostics: snippet, error, help, then the roast.
+    // rendered as a stack — a compiler that complains twice is on brand.
+    if (item.diagnostics?.length) {
+      item.diagnostics.forEach((d, di) => {
+        const box = new Box(panelInner, {
+          bg: C.abyss,
+          border: `1px solid ${C.line}`,
+          maxW: 560,
+          mt: di === 0 ? 0 : 2,
+          d: 'flex', fd: 'column',
+          pos: 'relative',
+          overflow: 'hidden',
+        })
 
-      const box = new Box(panelInner, {
-        bg: C.abyss,
-        border: `1px solid ${C.line}`,
-        maxW: 560,
-        d: 'flex', fd: 'column',
-        pos: 'relative',
-        overflow: 'hidden',
-      })
+        // header strip: filename + line + which diagnostic this is
+        const head = new Box(box, {
+          d: 'flex', jc: 'space-between', ai: 'center',
+          p: '4px 10px',
+          borderBottom: `1px solid ${C.line}`,
+          bg: C.panel,
+        })
+        const headLeft = new Box(head, { d: 'flex', ai: 'center', gap: 8 })
+        meta(headLeft, d.file, { c: C.dim })
+        meta(headLeft, `line ${d.line}`, { c: C.mute })
+        meta(head, `${di + 1} / ${item.diagnostics.length}`, { c: C.mute })
 
-      // header strip: filename + line
-      const head = new Box(box, {
-        d: 'flex', jc: 'space-between', ai: 'center',
-        p: '4px 10px',
-        borderBottom: `1px solid ${C.line}`,
-        bg: C.panel,
-      })
-      meta(head, d.file, { c: C.dim })
-      meta(head, `line ${d.line}`, { c: C.mute })
+        // snippet
+        const code = new Box(box, {
+          p: '10px 10px 2px 10px',
+          d: 'flex', fd: 'column', gap: 0,
+        })
+        new Text(code, {
+          text: d.code, fs: 10, ff: MONO, c: C.ink2,
+          lh: '1.6', whiteSpace: 'pre', d: 'block',
+        })
+        new Text(code, {
+          text: d.span, fs: 10, ff: MONO, c: C.mute,
+          lh: '1.6', whiteSpace: 'pre', d: 'block',
+        })
 
-      // snippet
-      const code = new Box(box, {
-        p: '10px 10px 2px 10px',
-        d: 'flex', fd: 'column', gap: 0,
-      })
-      new Text(code, {
-        text: d.code, fs: 10, ff: MONO, c: C.ink2,
-        lh: '1.6', whiteSpace: 'pre', d: 'block',
-      })
-      new Text(code, {
-        text: d.span, fs: 10, ff: MONO, c: C.mute,
-        lh: '1.6', whiteSpace: 'pre', d: 'block',
-      })
+        // error + help
+        const msg = new Box(box, {
+          p: '8px 10px 10px 10px',
+          d: 'flex', fd: 'column', gap: 3,
+        })
+        new Text(msg, {
+          text: `error: ${d.error}`, fs: 10, ff: MONO, c: C.dim,
+          lh: '1.6', d: 'block',
+        })
+        new Text(msg, {
+          text: `help:  ${d.help}`, fs: 10, ff: MONO, c: C.mute,
+          lh: '1.6', d: 'block',
+        })
 
-      // error + help
-      const msg = new Box(box, {
-        p: '8px 10px 10px 10px',
-        d: 'flex', fd: 'column', gap: 3,
-      })
-      new Text(msg, {
-        text: `error: ${d.error}`, fs: 10, ff: MONO, c: C.dim,
-        lh: '1.6', d: 'block',
-      })
-      new Text(msg, {
-        text: `help:  ${d.help}`, fs: 10, ff: MONO, c: C.mute,
-        lh: '1.6', d: 'block',
-      })
-
-      // the roast, set apart by a heavier rule and the display face
-      const roast = new Box(box, {
-        p: '8px 10px',
-        borderTop: `1px solid ${C.line2}`,
-        bg: C.raised,
-        d: 'flex', fd: 'column', gap: 3,
-      })
-      meta(roast, 'krix says', { c: C.mute })
-      new Text(roast, {
-        text: d.roast, fs: 10, ff: PIXEL, c: C.ink,
-        lh: '1.7',
+        // the roast, set apart by a heavier rule and the display face
+        const roast = new Box(box, {
+          p: '8px 10px',
+          borderTop: `1px solid ${C.line2}`,
+          bg: C.raised,
+          d: 'flex', fd: 'column', gap: 3,
+        })
+        meta(roast, 'krix says', { c: C.mute })
+        new Text(roast, {
+          text: d.roast, fs: 10, ff: PIXEL, c: C.ink,
+          lh: '1.7',
+        })
       })
     }
 
