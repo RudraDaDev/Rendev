@@ -22,15 +22,16 @@ const IDENTITY = {
   role: 'web · systems · games',
   status: 'open to interesting problems',
   blurb:
-    'I build small, sharp tools for the web and I finish about half of them. ' +
-    'No frameworks, no CSS files, no build step — just vanilla JS and csui at the base.',
+    'I build small, sharp tools — mostly on the web, increasingly on bare metal. ' +
+    'No frameworks, no CSS files, no build step: vanilla JS and csui at the base, ' +
+    'C and a bootloader at the other end.',
 }
 
 const STATS = [
-  { label: 'projects',  value: '04', note: 'shipped-ish' },
-  { label: 'stack',     value: 'JS', note: 'vanilla only' },
-  { label: 'deps',      value: '00', note: 'runtime' },
-  { label: 'commitment', value: '50%', note: 'honest average' },
+  { label: 'projects',   value: '09', note: 'shipped-ish' },
+  { label: 'stack',      value: 'JS', note: 'vanilla only' },
+  { label: 'deps',       value: '00', note: 'runtime' },
+  { label: 'commitment', value: '85%', note: 'honest average' },
 ]
 
 const WORK = [
@@ -53,6 +54,113 @@ const WORK = [
     ],
   },
   {
+    id: 'csui',
+    year: '2026',
+    name: 'csui',
+    kind: 'library · dom wrapper',
+    state: 'v0.1',
+    score: 4,
+    summary: 'A NativeScript-style DOM wrapper — 3.4k lines, zero dependencies.',
+    detail:
+      'Elements are built by construction: `new Box(parent, { w: 200 })` mounts immediately, ' +
+      'props route through a shorthand style map, and there is no virtual DOM to diff. ' +
+      'It also carries a scene manager, a plugin API, SVG helpers and an Android-compat layer. ' +
+      'Every page on this site is three lines of csui.',
+    stack: ['esm', 'no deps', 'scenes', 'plugins'],
+    links: [
+      { label: 'source', href: 'https://github.com/RudraDaDev/ctrlscript' },
+      { label: 'read docs', action: 'docs' },
+    ],
+  },
+  {
+    id: 'kargohold',
+    year: '2026',
+    name: 'kargohold',
+    kind: 'bootloader · rpi 3b+',
+    state: 'hacking',
+    score: 3,
+    summary: 'A multiboot bootloader for the Pi 3B+ — joystick, keypad, keyboard, touch.',
+    detail:
+      'Four ways to pick an OS on bare metal: an analog joystick, a matrix keypad, a USB ' +
+      'keyboard and a resistive touch panel, all feeding one menu. Written against the ' +
+      'hardware rather than an OS — which mostly means writing the drivers underneath it first.',
+    stack: ['bare metal', 'arm', 'rpi 3b+', 'input drivers'],
+    links: [],
+  },
+  {
+    id: 'ili9486',
+    year: '2026',
+    name: 'ili9486 drivers',
+    kind: 'systems · c drivers',
+    state: 'bare metal',
+    score: 3,
+    summary: 'Bare-metal C drivers for the ILI9486 display controller.',
+    detail:
+      'No HAL, no OS, no libc niceties: SPI bring-up, init sequences, window addressing and ' +
+      'pixel blits straight onto the panel. Built because kargohold needed something to draw ' +
+      'a menu on before anything else existed.',
+    stack: ['c', 'spi', 'no hal', 'arm'],
+    links: [],
+  },
+  {
+    id: 'smallhours',
+    year: '2025',
+    name: 'smallhours',
+    kind: 'site · gh pages',
+    state: 'live',
+    score: 3,
+    summary: 'A late-night build, published to GitHub Pages.',
+    detail:
+      'The name is about when it gets written. Static, small, and shipped instead of ' +
+      'polished — a reminder that the fastest way to finish something is to stop ' +
+      'adding to it.',
+    stack: ['static', 'gh pages', 'html'],
+    links: [{ label: 'live', href: 'https://rudradadev.github.io/smallhours' }],
+  },
+  {
+    id: 'tyreroads',
+    year: '2025',
+    name: 'tyreroads',
+    kind: 'web · experiment',
+    state: 'wip',
+    score: 2,
+    summary: 'An experiment that never stopped being an experiment.',
+    detail:
+      'Started as a way to look at road surfaces and turned into a lesson in scope creep. ' +
+      'Still open, still unfinished, still interesting to open on a slow evening.',
+    stack: ['web', 'unfinished'],
+    links: [],
+  },
+  {
+    id: 'krix',
+    year: '2025',
+    name: 'krix',
+    kind: 'language · parser',
+    state: 'toy',
+    score: 2,
+    summary: 'A toy language: lexer, parser, and the long tail of a grammar.',
+    detail:
+      'Written to understand how much of a language you can hold in your head at once. ' +
+      'The lexer and parser survived; the type checker is where ambition met arithmetic.',
+    stack: ['parser', 'toy lang', 'js'],
+    links: [],
+  },
+  {
+    id: 'afterbell',
+    year: '2025',
+    name: 'afterbell',
+    kind: 'app · school social',
+    state: 'test build',
+    score: 2,
+    summary: 'A school social app. Test build is up, the rest is dormant.',
+    detail:
+      'The one that needed a backend, a moderation model and a reason to exist. A test ' +
+      'deployment is public while the private build sits untouched. Kept in the list ' +
+      'because the shelved ones are part of the record.',
+    stack: ['netlify', 'private build', 'shelved'],
+    links: [{ label: 'test build', href: 'https://test-afterbell.netlify.app' }],
+  },
+  {
     id: 'brokenhours',
     year: '2026',
     name: 'brokenhours',
@@ -62,57 +170,29 @@ const WORK = [
     summary: 'A tiny game studio. The library opens when something is playable.',
     detail:
       'Four slots, zero shipped. The grid on the studio page is the entire product for ' +
-      'now — a deliberate refusal to put up a store page before there is a game. Two of ' +
-      'the four are real prototypes running on csui scenes and a Matter.js loop.',
-    stack: ['csui', 'matter.js', 'scenes', 'no engine'],
+      'now — a deliberate refusal to put up a store page before there is a game.',
+    stack: ['csui', 'matter.js', 'scenes'],
     links: [{ label: 'open scene', action: 'scene' }],
-  },
-  {
-    id: 'csui',
-    year: '2026',
-    name: 'csui',
-    kind: 'library · dom wrapper',
-    state: 'v0.1',
-    score: 3,
-    summary: 'A NativeScript-style DOM wrapper — 3.4k lines, zero dependencies.',
-    detail:
-      'Elements are built by construction: `new Box(parent, { w: 200 })` mounts immediately, ' +
-      'props route through a shorthand style map, and there is no virtual DOM to diff. ' +
-      'It also carries a scene manager, a plugin API, SVG helpers and an Android-compat layer.',
-    stack: ['esm', 'no deps', 'scenes', 'plugins'],
-    links: [{ label: 'read docs', action: 'docs' }],
-  },
-  {
-    id: 'afterbell',
-    year: '2025',
-    name: 'afterbell',
-    kind: 'app · school social',
-    state: 'private',
-    score: 1,
-    summary: 'A school social app. Separate repo, private build, mostly dormant.',
-    detail:
-      'The one that needed a backend, a moderation model and a reason to exist. ' +
-      'Shelved in favour of things that could be finished alone. Kept in the list because ' +
-      'the shelved ones are part of the record.',
-    stack: ['private', 'shelved', 'lessons'],
-    links: [],
   },
 ]
 
 const CAPABILITIES = [
   { label: 'vanilla js / esm', score: 5 },
   { label: 'dom + layout',     score: 5 },
+  { label: 'bare metal c',     score: 4 },
   { label: 'design systems',   score: 4 },
-  { label: 'game loops',       score: 3 },
   { label: 'canvas / svg',     score: 3 },
+  { label: 'parsers / langs',  score: 3 },
   { label: 'rust',             score: 2 },
 ]
 
 const TIMELINE = [
-  { year: '2026', what: 'rendev.in alpha', note: 'static hosting' },
-  { year: '2026', what: 'csui v0.1',       note: 'dom wrapper, scenes' },
-  { year: '2025', what: 'afterbell',       note: 'shelved' },
-  { year: '2024', what: 'first csui',      note: 'a box and a circle' },
+  { year: '2026', what: 'kargohold + ili9486', note: 'bare metal' },
+  { year: '2026', what: 'rendev.in alpha',     note: 'static hosting' },
+  { year: '2026', what: 'csui v0.1',           note: 'dom wrapper, scenes' },
+  { year: '2025', what: 'afterbell',           note: 'shelved' },
+  { year: '2025', what: 'krix / tyreroads',    note: 'experiments' },
+  { year: '2024', what: 'first csui',          note: 'a box and a circle' },
 ]
 
 const LINKS = [
@@ -299,7 +379,7 @@ scene('me', () => {
   heading(recPad, {
     eyebrow: 'record / 2024 — 2026',
     title: 'things i built.',
-    sub: 'four entries, two of them real. expand a row to read the note.',
+    sub: 'nine entries, most of them real. expand a row to read the note.',
     size: 'clamp(26px, 4vw, 40px)',
   })
 
@@ -327,6 +407,7 @@ scene('me', () => {
     mt: 26, mb: 8,
   })
   meta(workHead, 'selected work', { c: C.dim })
+  const TOTAL = String(WORK.length).padStart(2, '0')
   const openState = meta(workHead, 'all closed', { c: C.mute, ta: 'right' })
 
   const work = new Box(recPad, { d: 'flex', fd: 'column', borderTop: HAIRLINE })
@@ -337,7 +418,7 @@ scene('me', () => {
   const setState = () => {
     const openIdx = WORK.findIndex(w => w.id === openId)
     openState.text = openId
-      ? `0${openIdx + 1} / 04 open`
+      ? `${String(openIdx + 1).padStart(2, '0')} / ${TOTAL} open`
       : 'all closed'
   }
 
